@@ -3,55 +3,55 @@ module Redcar
     class VersionBar < Speedbar
       include Redcar::Observable
 
-      button :revert_button, "Revert!", nil do
-        revert = Application::Dialog.message_box(<<-TEXT.gsub(/^\s*/, ""), :type => :warning, :buttons => :yes_no)
-          Depending on your SCM, you might not be able to undo this revert easily.
-          Note, that this will only change the file's contents on disk, not commit the changes.
-
-          Are you sure you want to revert to the currently displayed version?
-        TEXT
-        if revert
-          tab = Redcar.app.focussed_window.focussed_notebook_tab
-          doc = tab.edit_view.document if tab and tab.edit_tab?
-          doc.save!
-        end
-      end
-
       label :text, "Versions:"
+      slider :versions_slider do |version| checkout(version); end
+      button :revert_button, "Revert!", nil do revert!; end
 
       def initialize
         @window    = Redcar.app.focussed_window
         tab        = @window.focussed_notebook_tab
         @edit_view = tab.edit_view if tab.edit_tab?
-        create_slider
-        get_versions
 
-        @listener = @window.add_listener(:tab_focussed) do |tab|
+        get_versions
+        attach_listeners
+      end
+
+      def close
+        remove_listeners
+      end
+
+      def attach_listeners
+        @listeners = Hash.new {|h,k| h[k] = [] }
+        @listeners[@window] << @window.add_listener(:tab_focussed) do |tab|
           @edit_view = nil
           @edit_view = tab.edit_view if tab.edit_tab?
           get_versions
         end
       end
 
-      def close
-        @window.remove_listener(@listener)
+      def remove_listeners
+        @listeners.each_pair do |observable, listeners|
+          listeners.each {|l| observable.remove_listener(l) }
+        end
       end
 
-      def create_slider
-        self.class.slider :versions_slider, &method(:revert_to)
-      end
-
-      def relative_file_path
-        file_path = @edit_view.document.path.sub(File.expand_path(@project_path) + File::SEPARATOR, "")
-	file_path.gsub(File::SEPARATOR, "/")
-      end
-
-      def revert_to(version)
-        return unless @edit_view.document.path
+      def checkout(version)
+        return unless file_path
         idx = git_repo.index
         idx.read_tree @versions[version - 1].sha
-        p "Trying to revert to #{@versions[version - 1].sha} of file #{relative_file_path}"
-        @edit_view.document.text = (idx.current_tree / relative_file_path).data
+        p "Trying to revert to #{@versions[version - 1].sha} of file #{file_path}"
+        @edit_view.document.text = (idx.current_tree / file_path).data
+      end
+
+      def revert!
+        return unless @edit_view
+        revert = Application::Dialog.message_box(<<-TEXT.gsub(/^[ ]*/, ""), :type => :warning, :buttons => :yes_no)
+          Depending on your SCM, you might not be able to undo this revert easily.
+          Note, that this will only change the file's contents on disk, not commit the changes.
+
+          Are you sure you want to revert to the currently displayed version?
+        TEXT
+        @edit_view.document.save! if revert
       end
 
       def get_versions
@@ -64,15 +64,22 @@ module Redcar
             versions_slider.value   = @versions.count
           end
         end
-        versions_slider.enabled = (@versions and @versions.any?)
+        versions_slider.enabled = (path and @versions.any?)
       end
 
       def git_repo
-        project_path = Project::Manager.in_window(@window).path
-        if @project_path != project_path
-          @git_repo = Grit::Repo.new(@project_path = project_path)
+        project = Project::Manager.in_window(@window)
+        if project and @project_path != project.path
+          @git_repo = Grit::Repo.new(@project_path = project.path)
         end
         @git_repo
+      end
+
+      def file_path
+        return @file_path if @file_path
+        @file_path = @edit_view.document.path
+        @file_path.sub!(File.expand_path(@project_path) + File::SEPARATOR, "")
+        @file_path.gsub!(File::SEPARATOR, "/")
       end
     end
   end
