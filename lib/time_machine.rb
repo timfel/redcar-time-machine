@@ -1,4 +1,6 @@
-require 'time_machine/time_machine_bar'
+$LOAD_PATH << File.expand_path("../../../vendor/grit/lib", __FILE__)
+require 'grit'
+require 'time_machine/version_bar'
 
 module Redcar
   module TimeMachine
