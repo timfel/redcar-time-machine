@@ -5,6 +5,12 @@ require 'time_machine/version_bar'
 module Redcar
   module TimeMachine
 
+    def self.sensitivities
+      [ Sensitivity.new(:open_version_bar, Redcar.app, false, [:window_focussed]) do |window|
+          Project::Manager.focussed_project
+        end ]
+    end
+
     def self.menus
       Redcar::Menu::Builder.build do
         sub_menu "Plugins" do
@@ -16,6 +22,8 @@ module Redcar
     end
 
     class OpenVersionBar < Command
+      sensitize :open_version_bar
+
       def execute
         window = Redcar.app.focussed_window
         speedbar = Redcar::TimeMachine::VersionBar.new
