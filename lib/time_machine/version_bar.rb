@@ -11,7 +11,9 @@ module Redcar
           Are you sure you want to revert to the currently displayed version?
         TEXT
         if revert
-
+          tab = Redcar.app.focussed_window.focussed_notebook_tab
+          doc = tab.edit_view.document if tab and tab.edit_tab?
+          doc.save!
         end
       end
 
