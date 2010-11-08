@@ -41,12 +41,17 @@ module Redcar
         self.class.slider :versions_slider, &method(:revert_to)
       end
 
+      def relative_file_path
+        file_path = @edit_view.document.path.sub(File.expand_path(@project_path) + File::SEPARATOR, "")
+	file_path.gsub(File::SEPARATOR, "/")
+      end
+
       def revert_to(version)
         return unless @edit_view.document.path
         idx = git_repo.index
-        file_path = @edit_view.document.path.sub(@project_path, "")
         idx.read_tree @versions[version - 1].sha
-        @edit_view.document.text = (idx.current_tree / file_path).data
+        p "Trying to revert to #{@versions[version - 1].sha} of file #{relative_file_path}"
+        @edit_view.document.text = (idx.current_tree / relative_file_path).data
       end
 
       def get_versions
