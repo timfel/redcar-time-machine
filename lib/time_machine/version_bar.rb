@@ -3,7 +3,6 @@ module Redcar
     class VersionBar < Speedbar
       include Redcar::Observable
 
-      label :text, "Versions:"
       button :revert_button, "Revert!", nil do
         revert = Application::Dialog.message_box(<<-TEXT.gsub(/^\s*/, ""), :type => :warning, :buttons => :yes_no)
           Depending on your SCM, you might not be able to undo this revert easily.
@@ -15,6 +14,8 @@ module Redcar
 
         end
       end
+
+      label :text, "Versions:"
 
       def initialize
         @window    = Redcar.app.focussed_window
