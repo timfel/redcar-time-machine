@@ -59,7 +59,7 @@ module Redcar
         if path
           @versions = git_repo.log("HEAD", path).reverse
           if @versions.any?
-            versions_slider.minimum = 1
+            versions_slider.minimum = 0
             versions_slider.maximum = @versions.count
             versions_slider.value   = @versions.count
           end
