@@ -10,10 +10,10 @@ module Redcar
       def initialize
         @window    = Redcar.app.focussed_window
         tab        = @window.focussed_notebook_tab
-        @edit_view = tab.edit_view if tab.edit_tab?
+        @edit_view = tab.edit_view if tab and tab.edit_tab?
 
-        get_versions
         attach_listeners
+        get_versions
       end
 
       def close
