@@ -39,7 +39,6 @@ module Redcar
         return unless file_path
         idx = git_repo.index
         idx.read_tree @versions[version].sha
-        p "Trying to revert to #{@versions[version].sha} of file #{file_path}"
         @edit_view.document.text = (idx.current_tree / file_path).data
       end
 
